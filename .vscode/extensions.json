@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "ms-vscode-remote.remote-ssh",
+    "ms-python.python",
+    "ms-python.debugpy",
+    "ms-vscode.cpptools",
+    "ms-vscode.cmake-tools",
+    "nvidia.nsight-vscode-edition",
+    "ranch-hand-robotics.rde-pack"
+  ]
+}

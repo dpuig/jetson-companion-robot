@@ -1,0 +1,60 @@
+{
+  // Mac-side tasks: each syncs the repo to the Jetson, then builds/runs there over SSH.
+  // Cmd+Shift+B runs the default build task; Cmd+Shift+P > "Run Task" for the rest.
+  "version": "2.0.0",
+  "inputs": [
+    {
+      "id": "target",
+      "type": "pickString",
+      "description": "Which app?",
+      "options": ["py", "cuda", "ros"],
+      "default": "cuda"
+    }
+  ],
+  "tasks": [
+    {
+      "label": "jetson: sync",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/jetson.sh sync",
+      "problemMatcher": []
+    },
+    {
+      "label": "jetson: build",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/jetson.sh build ${input:target}",
+      "group": { "kind": "build", "isDefault": true },
+      // Remote paths (~/dev/robotics/...) are mapped back to local files.
+      "problemMatcher": {
+        "base": "$gcc",
+        "fileLocation": ["autoDetect", "${workspaceFolder}"]
+      }
+    },
+    {
+      "label": "jetson: run",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/jetson.sh run ${input:target}",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "jetson: debug py (wait for attach)",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/jetson.sh debug py",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "^__never__$" },
+        "background": {
+          "activesBegin": true,
+          "beginsPattern": ">> waiting for debugger",
+          "endsPattern": ">> waiting for debugger"
+        }
+      }
+    },
+    {
+      "label": "jetson: doctor",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/jetson.sh doctor",
+      "problemMatcher": []
+    }
+  ]
+}

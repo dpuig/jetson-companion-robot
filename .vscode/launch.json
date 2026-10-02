@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // From the Mac: syncs, starts debugpy on the Jetson, tunnels :5678, attaches.
+      "name": "Jetson: debug Python (from Mac)",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": { "host": "localhost", "port": 5678 },
+      "preLaunchTask": "jetson: debug py (wait for attach)",
+      "pathMappings": [
+        { "localRoot": "${workspaceFolder}", "remoteRoot": "/home/dpuig/dev/robotics" }
+      ],
+      "justMyCode": true
+    },
+    {
+      // Inside a Remote-SSH window on the Jetson: gdb/cuda-gdb run natively there.
+      "name": "Remote-SSH: debug CUDA (cuda-gdb)",
+      "type": "cuda-gdb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/cpp/hello_cuda/hello_cuda",
+      "debuggerPath": "/usr/local/cuda/bin/cuda-gdb"
+    },
+    {
+      "name": "Remote-SSH: debug C++ (gdb)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/cpp/hello_cuda/hello_cuda",
+      "cwd": "${workspaceFolder}",
+      "MIMode": "gdb"
+    },
+    {
+      "name": "Remote-SSH: debug ROS 2 talker",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/ros2_ws/install/hello_ros/lib/hello_ros/talker",
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/.vscode/ros.env"
+    }
+  ]
+}

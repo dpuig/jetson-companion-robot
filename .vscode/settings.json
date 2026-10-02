@@ -1,0 +1,14 @@
+{
+  "cmake.sourceDirectory": "${workspaceFolder}/cpp",
+  "cmake.buildDirectory": "${workspaceFolder}/build/cpp",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/cpp/compile_commands.json",
+  "python.analysis.extraPaths": [
+    "/opt/ros/humble/lib/python3.10/site-packages",
+    "${workspaceFolder}/ros2_ws/install/hello_ros/lib/python3.10/site-packages"
+  ],
+  "files.watcherExclude": {
+    "**/build/**": true,
+    "**/install/**": true,
+    "**/log/**": true
+  }
+}

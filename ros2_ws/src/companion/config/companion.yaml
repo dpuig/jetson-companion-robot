@@ -1,0 +1,42 @@
+# Parameters for every companion node. Override at launch:
+#   ros2 launch companion companion.launch.py params:=/path/to/other.yaml
+camera:
+  ros__parameters:
+    source: "/dev/video0"     # V4L2 device, or a video file path for testing
+    fps: 2.0                  # the model only needs the latest frame; keep this low
+    width: 512                # frames are downscaled before JPEG; 512x384 ≈ 190 image tokens
+    jpeg_quality: 80
+
+hearing:
+  ros__parameters:
+    device: ""                # sounddevice name/index; "" = system default input
+    whisper_url: "http://127.0.0.1:8082/inference"
+    language: "auto"          # or "en", "es", ...
+    vad_aggressiveness: 2     # 0-3, higher = stricter about what counts as speech
+    silence_ms: 700           # end an utterance after this much silence
+    min_speech_ms: 300        # ignore blips shorter than this
+
+brain:
+  ros__parameters:
+    llm_url: "http://127.0.0.1:8081/v1/chat/completions"
+    whisper_url: "http://127.0.0.1:8082/inference"   # transcribes uploaded audio files
+    robot_name: "Kusi"
+    see_on_every_turn: true   # attach the latest camera frame to every user turn
+    frame_max_age_s: 3.0      # a frame older than this counts as "camera not available"
+    history_turns: 8          # past user/assistant pairs kept in context
+    max_tokens: 400
+    temperature: 0.7
+    file_max_chars: 12000     # text extracted from a file is truncated to this
+
+voice:
+  ros__parameters:
+    model: "~/models/en_US-lessac-medium.onnx"
+    device: ""                # sounddevice name/index; "" = default output
+    save_dir: ""              # also write each utterance as a WAV here (useful with no speaker)
+    enabled: true
+
+gateway:
+  ros__parameters:
+    host: "0.0.0.0"
+    port: 8080
+    upload_dir: "~/companion/uploads"

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Companion</title>
+<style>
+  :root { --bg:#f6f5f2; --panel:#fff; --ink:#1d1d1b; --muted:#6b6a66; --line:#e2e0da;
+          --me:#1d4ed8; --me-ink:#fff; --bot:#efeee9; --accent:#1d4ed8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#141413; --panel:#1d1d1b; --ink:#ecebe6; --muted:#9a988f; --line:#2e2d2a;
+            --me:#3b6ef0; --bot:#262624; --accent:#6d93f5; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:15px/1.45 system-ui,-apple-system,sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:16px; display:grid; gap:16px;
+         grid-template-columns:minmax(0,1fr) 340px; height:100dvh; }
+  @media (max-width:800px) { main { grid-template-columns:1fr; height:auto; } aside { order:-1; } }
+  section, aside { background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+  section { display:flex; flex-direction:column; min-height:70dvh; }
+  #log { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:8px; }
+  .msg { max-width:80%; padding:8px 12px; border-radius:12px; white-space:pre-wrap; }
+  .user { align-self:flex-end; background:var(--me); color:var(--me-ink); }
+  .assistant { align-self:flex-start; background:var(--bot); }
+  .tag { font-size:12px; color:var(--muted); margin-top:2px; }
+  .user .tag { color:rgba(255,255,255,.75); }
+  form { display:flex; gap:8px; padding:12px; border-top:1px solid var(--line); }
+  input[type=text] { flex:1; min-width:0; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
+                     background:var(--bg); color:var(--ink); font:inherit; }
+  button, label.btn { padding:10px 14px; border-radius:8px; border:0; background:var(--accent);
+                      color:#fff; font:inherit; cursor:pointer; white-space:nowrap; }
+  label.btn { background:var(--bot); color:var(--ink); }
+  aside { padding:12px; display:flex; flex-direction:column; gap:8px; align-self:start; }
+  aside img { width:100%; border-radius:8px; background:var(--bot); aspect-ratio:4/3; object-fit:cover; }
+  .muted { color:var(--muted); font-size:13px; }
+  #status::before { content:"● "; color:#c0392b; } #status.on::before { color:#2e9d57; }
+</style>
+</head>
+<body>
+<main>
+  <section>
+    <div id="log"></div>
+    <form id="send">
+      <label class="btn" title="Attach a file (PDF, text, image, WAV)">📎<input id="file" type="file" hidden></label>
+      <input id="text" type="text" placeholder="Say something…" autocomplete="off">
+      <button>Send</button>
+    </form>
+  </section>
+  <aside>
+    <strong>What I see</strong>
+    <img id="cam" alt="camera view">
+    <span id="status" class="muted">connecting…</span>
+    <span id="attach" class="muted"></span>
+    <a class="muted" href="/face" target="_blank">Open the face ↗</a>
+  </aside>
+</main>
+<script>
+const log = document.getElementById('log'), text = document.getElementById('text'),
+      file = document.getElementById('file'), attach = document.getElementById('attach'),
+      status = document.getElementById('status'), cam = document.getElementById('cam');
+const SOURCE = { speech: '🎤 spoken', text: '⌨️ typed', file: '📎 file', error: '' };
+
+function add(role, body, source) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + role;
+  d.textContent = body;
+  if (role === 'user' && SOURCE[source]) {
+    const t = document.createElement('div'); t.className = 'tag'; t.textContent = SOURCE[source]; d.append(t);
+  }
+  log.append(d); log.scrollTop = log.scrollHeight;
+}
+
+function connect() {
+  const es = new EventSource('/api/events');
+  es.onopen = () => { status.textContent = 'connected'; status.className = 'muted on'; };
+  es.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type === 'reply') add(m.role, m.text, m.source);
+    else if (m.type === 'state') status.textContent = m.state === 'idle' ? 'connected' : m.state + '…';
+  };
+  es.onerror = () => { status.textContent = 'reconnecting…'; status.className = 'muted'; };
+}
+connect();
+
+file.onchange = () => { attach.textContent = file.files[0] ? 'attached: ' + file.files[0].name : ''; };
+
+document.getElementById('send').onsubmit = async e => {
+  e.preventDefault();
+  const body = text.value.trim();
+  if (file.files[0]) {
+    const fd = new FormData(); fd.append('file', file.files[0]); fd.append('prompt', body);
+    await fetch('/api/file', { method: 'POST', body: fd });
+    file.value = ''; attach.textContent = '';
+  } else if (body) {
+    await fetch('/api/text', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ text: body }) });
+  }
+  text.value = '';
+};
+
+setInterval(async () => {   // camera preview, ~1 fps
+  const r = await fetch('/api/frame').catch(() => null);
+  if (r && r.status === 200) {
+    const prev = cam.src; cam.src = URL.createObjectURL(await r.blob());
+    if (prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+  }
+}, 1000);
+</script>
+</body>
+</html>
